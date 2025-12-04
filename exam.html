@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 核心：移动端视口适配，禁止缩放 -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>爱心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "楷体", KaiTi, serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            /* 适配手机宽度 */
+            position: relative;
+            touch-action: none;
+            /* 禁止移动端触摸缩放/滚动 */
+            /* 适配刘海屏/全面屏 */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* 消息盒：响应式尺寸，适配手机屏幕 */
+        .message-box {
+            position: absolute;
+            /* clamp(最小, 适配值, 最大)：手机自动缩小，平板/电脑自适应 */
+            width: clamp(50px, 12vw, 80px);
+            height: clamp(30px, 7vw, 45px);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(10px, 2vw, 12px);
+            padding: 0 clamp(4px, 1vw, 6px);
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            animation: float 12s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .message-box.heart-mode {
+            width: clamp(50px, 12vw, 80px);
+            height: clamp(30px, 7vw, 45px);
+            font-size: clamp(10px, 2vw, 12px);
+            padding: 0 clamp(4px, 1vw, 6px);
+        }
+
+        .message-box.bloom-mode {
+            width: clamp(180px, 40vw, 300px);
+            height: clamp(50px, 10vw, 80px);
+            font-size: clamp(12px, 3vw, 16px);
+            padding: 0 clamp(10px, 2vw, 15px);
+        }
+
+        /* 漂浮动画：手机端浮动幅度减小，避免超出屏幕 */
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(clamp(-5px, -2vw, -10px)) rotate(1deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        /* 提示文字：手机端字体自适应，居中更精准 */
+        .tip-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(16px, 4vw, 20px);
+            color: #666;
+            opacity: 0.8;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            padding: 0 5vw;
+            /* 手机端左右留白 */
+            /* 避开刘海屏 */
+            margin-top: env(safe-area-inset-top);
+        }
+
+        /* 音乐按钮：手机端尺寸适配，易点击 */
+        .music-player-btn {
+            position: fixed;
+            bottom: clamp(10px, 3vw, 20px);
+            right: clamp(10px, 3vw, 20px);
+            width: clamp(40px, 10vw, 60px);
+            height: clamp(40px, 10vw, 60px);
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+            z-index: 999;
+            font-size: clamp(16px, 5vw, 24px);
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            /* 去除手机点击高亮 */
+            /* 避开底部小黑条 */
+            margin-bottom: env(safe-area-inset-bottom);
+        }
+
+        .music-player-btn:hover {
+            transform: scale(1.1);
+            background-color: #7c3aed;
+        }
+
+        .music-player-btn:active {
+            transform: scale(0.95);
+            /* 手机点击反馈 */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tip-text">爱心生成中... 💖</div>
+
+    <!-- 音乐播放按钮 -->
+    <div class="music-player-btn" id="musicBtn">🎵</div>
+
+    <!-- 音频标签：指向同文件夹下的MP3文件 -->
+    <audio id="bgMusic" loop preload="auto" volume="1.0" playsinline webkit-playsinline>
+        <source src="obj_wo3DlMOGwrbDjj7DisKw_15845338450_37d1_a4fd_abd3_fdc77929bcf934c06b97b65c9c58d0d3.mp3"
+            type="audio/mpeg">
+        您的浏览器不支持音频播放
+    </audio>
+
+    <script>
+        // ========== 音乐播放核心逻辑（适配手机） ==========
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        // 强制取消静音 + 最大音量
+        bgMusic.muted = false;
+        bgMusic.volume = 1.0;
+
+        // 页面加载后预加载音频
+        window.addEventListener('load', () => {
+            bgMusic.load();
+            console.log("音频预加载完成");
+        });
+
+        // 兼容手机触摸事件 + 点击事件
+        function bindMusicBtnEvent() {
+            // 同时监听click（电脑）和touchstart（手机）
+            ['click', 'touchstart'].forEach(event => {
+                musicBtn.addEventListener(event, async (e) => {
+                    e.preventDefault(); // 阻止手机默认行为（如缩放）
+                    toggleMusic();
+                }, { passive: false });
+            });
+        }
+
+        // 播放/暂停逻辑（适配手机播放限制）
+        async function toggleMusic() {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicBtn.textContent = "🎵";
+                isPlaying = false;
+            } else {
+                try {
+                    // 等待音频加载完成
+                    if (bgMusic.readyState < 2) {
+                        await new Promise(resolve => bgMusic.addEventListener('canplay', resolve, { once: true }));
+                    }
+                    // 手机端必须用户交互才能播放，这里强制触发
+                    const playPromise = bgMusic.play();
+                    if (playPromise) await playPromise;
+
+                    musicBtn.textContent = "⏸";
+                    isPlaying = true;
+                    console.log("音乐开始播放");
+                } catch (err) {
+                    // 精准提示手机用户
+                    alert("播放失败！\n1. 请先点击页面空白处激活交互\n2. 检查MP3文件是否和HTML同目录");
+                    console.error("播放错误：", err);
+                }
+            }
+        }
+
+        // 绑定音乐按钮事件
+        bindMusicBtnEvent();
+
+        // 播放/暂停状态同步
+        bgMusic.addEventListener('playing', () => {
+            isPlaying = true;
+            musicBtn.textContent = "⏸";
+        });
+        bgMusic.addEventListener('pause', () => {
+            isPlaying = false;
+            musicBtn.textContent = "🎵";
+        });
+
+        // 加载失败提示
+        bgMusic.addEventListener('error', () => {
+            musicBtn.textContent = "❌";
+            alert("音频加载失败！\n请检查：\n1. MP3文件名和代码中完全一致\n2. 文件和HTML在同一文件夹");
+        });
+
+        // ========== 爱心逻辑（适配手机屏幕） ==========
+        const messages = [
+            "我想你了! ❤️", "多喝水哦", "保持微笑呀", "每天都要元气满满呢", "记得吃水果",
+            "保持好心情", "好好爱自己", "梦想成真", "期待下一次见面", "要相信自己",
+            "我好喜欢你呀! 💕", "你超棒的", "记得好好护肤", "你笑起来真好看!", "珍惜每一刻",
+            "今天有没有想我呀?", "要注意身体，别太累了!", "你的一切都让我心动!",
+            "遇见你是我最大的幸运!", "我会一直陪在你身边的! 🌟", "等张角角暴富养我",
+            "好好吃饭哦", "和张角角一起旅游!", "张角角万事顺意🌟", "张角角平安喜乐，岁岁无忧🎈",
+            "张角角好好休息，别熬夜😴"
+        ];
+
+        // 手机端加快爱心生成速度
+        const START_DELAY = 500;    // 缩短启动延迟
+        const HEART_STAY_TIME = 3000;
+        const CREATE_INTERVAL = 100; // 加快生成间隔（手机更流畅）
+        const BLOOM_DURATION = 1000;
+        const AUTO_ADD_INTERVAL = 2000;
+
+        function randomColor() {
+            const r = Math.floor(Math.random() * 76) + 180;
+            const g = Math.floor(Math.random() * 76) + 180;
+            const b = Math.floor(Math.random() * 76) + 180;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // 爱心坐标：适配手机屏幕尺寸
+        function getHeartPoints(count) {
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            const centerX = screenW / 2;
+            const centerY = screenH / 2;
+            // 手机端缩小爱心整体比例
+            const scale = Math.min(screenW, screenH) * 0.022;
+            const points = [];
+            for (let i = 0; i < count; i++) {
+                const theta = (i / count) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(theta), 3);
+                const y = 13 * Math.cos(theta) - 5 * Math.cos(2 * theta) - 2 * Math.cos(3 * theta) - Math.cos(4 * theta);
+                // 手机端减小随机偏移，避免超出屏幕
+                points.push({
+                    x: centerX + x * scale + (Math.random() - 0.5) * 5,
+                    y: centerY - y * scale + (Math.random() - 0.5) * 5
+                });
+            }
+            return points;
+        }
+
+        // 创建消息盒：确保在手机屏幕内显示
+        function createMessageBox(initX, initY, isNew = false) {
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const color = randomColor();
+            const box = document.createElement('div');
+            box.className = isNew ? 'message-box bloom-mode' : 'message-box heart-mode';
+
+            // 动态获取计算后的尺寸（响应式）
+            const boxWidth = parseFloat(getComputedStyle(box).width);
+            const boxHeight = parseFloat(getComputedStyle(box).height);
+
+            // 确保元素不超出手机屏幕
+            const adjustX = Math.max(0, Math.min(initX, window.innerWidth - boxWidth - 10));
+            const adjustY = Math.max(0, Math.min(initY, window.innerHeight - boxHeight - 10));
+
+            box.style.left = `${adjustX}px`;
+            box.style.top = `${adjustY}px`;
+            box.style.backgroundColor = color;
+            box.textContent = message;
+
+            if (isNew) box.style.animationPlayState = 'running';
+            document.body.appendChild(box);
+
+            // 兼容手机触摸点击消失
+            ['click', 'touchstart'].forEach(event => {
+                box.addEventListener(event, (e) => {
+                    e.preventDefault();
+                    box.style.opacity = '0';
+                    box.style.transform = 'scale(0.9)';
+                    setTimeout(() => box.remove(), 400);
+                }, { passive: false });
+            });
+            return box;
+        }
+
+        // 随机位置：适配手机屏幕
+        function getRandomPos() {
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            return {
+                x: Math.random() * (screenW - 80),
+                y: Math.random() * (screenH - 60)
+            };
+        }
+
+        function autoAddNewMessages() {
+            setInterval(() => {
+                const pos = getRandomPos();
+                createMessageBox(pos.x, pos.y, true);
+            }, AUTO_ADD_INTERVAL);
+        }
+
+        // 启动爱心动画：手机端减少爱心数量（更流畅）
+        function startHeartAnimation() {
+            // 按屏幕大小动态调整爱心数量（手机≈80个，电脑≈120个）
+            const totalBoxes = Math.min(120, Math.floor((window.innerWidth * window.innerHeight) / 4000));
+            const heartPoints = getHeartPoints(totalBoxes);
+            const boxes = [];
+            let count = 0;
+            const createInterval = setInterval(() => {
+                if (count >= totalBoxes) {
+                    clearInterval(createInterval);
+                    document.querySelector('.tip-text').textContent = "爱心送给你~ 💕";
+                    setTimeout(() => {
+                        document.querySelector('.tip-text').style.display = 'none';
+                        boxes.forEach(box => {
+                            const targetPos = getRandomPos();
+                            box.classList.remove('heart-mode');
+                            box.classList.add('bloom-mode');
+                            box.style.transition = `all ${BLOOM_DURATION}ms ease`;
+                            box.style.left = `${targetPos.x}px`;
+                            box.style.top = `${targetPos.y}px`;
+                            box.style.animationPlayState = 'running';
+                        });
+                        autoAddNewMessages();
+                    }, HEART_STAY_TIME);
+                    return;
+                }
+                const point = heartPoints[count];
+                boxes.push(createMessageBox(point.x, point.y));
+                count++;
+            }, CREATE_INTERVAL);
+        }
+
+        // 窗口大小变化/手机横屏切换时重新适配
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.message-box').forEach(box => box.remove());
+            clearTimeout(window.heartTimer);
+            window.heartTimer = setTimeout(startHeartAnimation, 300);
+        });
+
+        // 启动爱心动画
+        window.heartTimer = setTimeout(startHeartAnimation, START_DELAY);
+
+        // 防止手机端滚动
+        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    </script>
+</body>
+
+</html>
