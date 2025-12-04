@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "楷体", KaiTi, serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 消息盒基础样式 */
+        .message-box {
+            position: absolute;
+            width: 80px;
+            height: 45px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 0 6px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            animation: float 12s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .message-box.heart-mode {
+            width: 80px;
+            height: 45px;
+            font-size: 12px;
+            padding: 0 6px;
+        }
+
+        .message-box.bloom-mode {
+            width: 300px;
+            height: 80px;
+            font-size: 16px;
+            padding: 0 15px;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(1deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        .tip-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #666;
+            opacity: 0.8;
+            z-index: 10;
+        }
+
+        /* 音乐播放按钮 */
+        .music-player-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+            z-index: 999;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .music-player-btn:hover {
+            transform: scale(1.1);
+            background-color: #7c3aed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tip-text">爱心生成中... 💖</div>
+
+    <!-- 音乐播放按钮 -->
+    <div class="music-player-btn" id="musicBtn">🎵</div>
+
+    <!-- 音频标签：指向同文件夹下的MP3文件（直接写文件名即可） -->
+    <audio id="bgMusic" loop preload="auto" volume="1.0" playsinline webkit-playsinline>
+        <!-- 核心修改：替换为你的MP3文件名（和HTML同目录） -->
+        <source src="obj_wo3DlMOGwrbDjj7DisKw_15845338450_37d1_a4fd_abd3_fdc77929bcf934c06b97b65c9c58d0d3.mp3"
+            type="audio/mpeg">
+        您的浏览器不支持音频播放
+    </audio>
+
+    <script>
+        // ========== 音乐播放核心逻辑 ==========
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        // 强制取消静音 + 最大音量
+        bgMusic.muted = false;
+        bgMusic.volume = 1.0;
+
+        // 页面加载后预加载音频
+        window.addEventListener('load', () => {
+            bgMusic.load();
+            console.log("音频预加载完成");
+        });
+
+        // 按钮点击切换播放/暂停
+        musicBtn.addEventListener('click', async () => {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicBtn.textContent = "🎵";
+                isPlaying = false;
+            } else {
+                try {
+                    // 等待音频加载完成
+                    if (bgMusic.readyState < 2) {
+                        await new Promise(resolve => bgMusic.addEventListener('canplay', resolve, { once: true }));
+                    }
+                    await bgMusic.play();
+                    musicBtn.textContent = "⏸";
+                    isPlaying = true;
+                    console.log("音乐开始播放");
+                } catch (err) {
+                    alert("播放失败！请先点击页面空白处，再重试");
+                    console.error("播放错误：", err);
+                }
+            }
+        });
+
+        // 播放/暂停状态同步
+        bgMusic.addEventListener('playing', () => {
+            isPlaying = true;
+            musicBtn.textContent = "⏸";
+        });
+        bgMusic.addEventListener('pause', () => {
+            isPlaying = false;
+            musicBtn.textContent = "🎵";
+        });
+
+        // 加载失败提示
+        bgMusic.addEventListener('error', () => {
+            musicBtn.textContent = "❌";
+            alert("音频加载失败！请检查MP3文件名是否和代码中一致");
+        });
+
+        // ========== 原有爱心逻辑（完全不变） ==========
+        const messages = [
+            "我想你了! ❤️", "多喝水哦", "保持微笑呀", "每天都要元气满满呢", "记得吃水果",
+            "保持好心情", "好好爱自己", "梦想成真", "期待下一次见面", "要相信自己",
+            "我好喜欢你呀! 💕", "你超棒的", "记得好好护肤", "你笑起来真好看!", "珍惜每一刻",
+            "今天有没有想我呀?", "要注意身体，别太累了!", "你的一切都让我心动!",
+            "遇见你是我最大的幸运!", "我会一直陪在你身边的! 🌟", "等张角角暴富养我",
+            "好好吃饭哦", "和张角角一起旅游!", "张角角万事顺意🌟", "张角角平安喜乐，岁岁无忧🎈",
+            "张角角好好休息，别熬夜😴"
+        ];
+
+        const START_DELAY = 1000;
+        const HEART_STAY_TIME = 4000;
+        const CREATE_INTERVAL = 200;
+        const BLOOM_DURATION = 1000;
+        const AUTO_ADD_INTERVAL = 2000;
+
+        function randomColor() {
+            const r = Math.floor(Math.random() * 76) + 180;
+            const g = Math.floor(Math.random() * 76) + 180;
+            const b = Math.floor(Math.random() * 76) + 180;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function getHeartPoints(count) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const scale = Math.min(window.innerWidth, window.innerHeight) * 0.025;
+            const points = [];
+            for (let i = 0; i < count; i++) {
+                const theta = (i / count) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(theta), 3);
+                const y = 13 * Math.cos(theta) - 5 * Math.cos(2 * theta) - 2 * Math.cos(3 * theta) - Math.cos(4 * theta);
+                points.push({
+                    x: centerX + x * scale + (Math.random() - 0.5) * 10,
+                    y: centerY - y * scale + (Math.random() - 0.5) * 10
+                });
+            }
+            return points;
+        }
+
+        function createMessageBox(initX, initY, isNew = false) {
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const color = randomColor();
+            const box = document.createElement('div');
+            box.className = isNew ? 'message-box bloom-mode' : 'message-box heart-mode';
+            const boxWidth = isNew ? 300 : 80;
+            const boxHeight = isNew ? 80 : 45;
+            const adjustX = initX + boxWidth > window.innerWidth ? window.innerWidth - boxWidth - 10 : initX;
+            const adjustY = initY + boxHeight > window.innerHeight ? window.innerHeight - boxHeight - 10 : initY;
+            box.style.left = `${adjustX}px`;
+            box.style.top = `${adjustY}px`;
+            box.style.backgroundColor = color;
+            box.textContent = message;
+            if (isNew) box.style.animationPlayState = 'running';
+            document.body.appendChild(box);
+            box.addEventListener('click', () => {
+                box.style.opacity = '0';
+                box.style.transform = 'scale(0.9)';
+                setTimeout(() => box.remove(), 400);
+            });
+            return box;
+        }
+
+        function getRandomPos() {
+            const bodyWidth = window.innerWidth;
+            const bodyHeight = window.innerHeight;
+            return {
+                x: Math.random() * (bodyWidth - 140) + 70,
+                y: Math.random() * (bodyHeight - 90) + 45
+            };
+        }
+
+        function autoAddNewMessages() {
+            setInterval(() => {
+                const pos = getRandomPos();
+                createMessageBox(pos.x, pos.y, true);
+            }, AUTO_ADD_INTERVAL);
+        }
+
+        function startHeartAnimation() {
+            const totalBoxes = 120;
+            const heartPoints = getHeartPoints(totalBoxes);
+            const boxes = [];
+            let count = 0;
+            const createInterval = setInterval(() => {
+                if (count >= totalBoxes) {
+                    clearInterval(createInterval);
+                    document.querySelector('.tip-text').textContent = "爱心送给你~ 💕";
+                    setTimeout(() => {
+                        document.querySelector('.tip-text').style.display = 'none';
+                        boxes.forEach(box => {
+                            const targetPos = getRandomPos();
+                            box.classList.remove('heart-mode');
+                            box.classList.add('bloom-mode');
+                            box.style.transition = `all ${BLOOM_DURATION}ms ease`;
+                            box.style.left = `${targetPos.x}px`;
+                            box.style.top = `${targetPos.y}px`;
+                            box.style.animationPlayState = 'running';
+                        });
+                        autoAddNewMessages();
+                    }, HEART_STAY_TIME);
+                    return;
+                }
+                const point = heartPoints[count];
+                boxes.push(createMessageBox(point.x, point.y));
+                count++;
+            }, CREATE_INTERVAL);
+        }
+
+        // 启动爱心动画
+        setTimeout(startHeartAnimation, START_DELAY);
+    </script>
+</body>
+
+</html>
