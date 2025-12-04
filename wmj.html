@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亲爱的</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "楷体", KaiTi, serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .message-box {
+            position: absolute;
+            width: 300px;
+            height: 80px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0 15px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            animation:
+                fadeIn 0.6s ease forwards 0.1s,
+                float 12s ease-in-out infinite 0.6s;
+        }
+
+        .message-box:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(1deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        .loading-tip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #666;
+            opacity: 0.8;
+        }
+
+        /* 新增音乐播放按钮样式 */
+        .music-player-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+            z-index: 999;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            /* 去除手机点击高亮 */
+        }
+
+        .music-player-btn:hover {
+            transform: scale(1.1);
+            background-color: #7c3aed;
+        }
+
+        .music-player-btn:active {
+            transform: scale(0.95);
+            /* 点击反馈 */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading-tip">准备中... 💖</div>
+    <!-- 新增音乐播放按钮 -->
+    <div class="music-player-btn" id="musicBtn">🎵</div>
+    <!-- 音频标签 -->
+    <audio id="bgMusic" loop preload="auto" volume="1.0" playsinline webkit-playsinline>
+        <source src="music.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放
+    </audio>
+
+    <script>
+        // ========== 新增音乐播放核心逻辑 ==========
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        // 初始化音频状态
+        bgMusic.muted = false;
+        bgMusic.volume = 1.0;
+
+        // 页面加载后预加载音频
+        window.addEventListener('load', () => {
+            bgMusic.load();
+            console.log("音频预加载完成");
+        });
+
+        // 点击音乐按钮切换播放/暂停
+        musicBtn.addEventListener('click', async () => {
+            if (isPlaying) {
+                // 暂停播放
+                bgMusic.pause();
+                musicBtn.textContent = "🎵";
+                isPlaying = false;
+            } else {
+                try {
+                    // 等待音频加载完成（避免播放失败）
+                    if (bgMusic.readyState < 2) {
+                        await new Promise(resolve => bgMusic.addEventListener('canplay', resolve, { once: true }));
+                    }
+                    // 播放音频
+                    await bgMusic.play();
+                    musicBtn.textContent = "⏸";
+                    isPlaying = true;
+                    console.log("音乐开始播放");
+                } catch (err) {
+                    alert("播放失败！请检查：\n1. music.mp3 是否和HTML文件同目录\n2. 文件名是否正确");
+                    console.error("播放错误：", err);
+                }
+            }
+        });
+
+        // 播放/暂停状态同步（防止手动控制音频后状态不一致）
+        bgMusic.addEventListener('playing', () => {
+            isPlaying = true;
+            musicBtn.textContent = "⏸";
+        });
+        bgMusic.addEventListener('pause', () => {
+            isPlaying = false;
+            musicBtn.textContent = "🎵";
+        });
+
+        // 音频加载失败提示
+        bgMusic.addEventListener('error', () => {
+            musicBtn.textContent = "❌";
+            alert("音频加载失败！请确保 music.mp3 文件存在且路径正确");
+        });
+
+        // ========== 原有文字盒子逻辑 ==========
+        const messages = [
+            "我想你了! ❤️", "多喝水哦", "保持微笑呀", "每天都要元气满满呢", "记得吃水果",
+            "保持好心情", "好好爱自己", "梦想成真", "期待下一次见面", "要相信自己",
+            "我好喜欢你呀! 💕", "你超棒的", "记得好好护肤", "你笑起来真好看!", "珍惜每一刻",
+            "今天有没有想我呀?", "要注意身体，别太累了!", "你的一切都让我心动!",
+            "遇见你是我最大的幸运!", "我会一直陪在你身边的! 🌟", "等君傻傻暴富养我",
+            "好好吃饭哦", "和君傻傻一起旅游!", "君傻傻万事顺意🌟", "君傻傻平安喜乐，岁岁无忧🎈",
+            "好好休息，别熬夜😴"
+        ];
+
+        const START_DELAY = 3000;
+        const CREATE_INTERVAL = 500;
+        const TOTAL_BOXES = 150;
+
+        function randomColor() {
+            const r = Math.floor(Math.random() * 76) + 180;
+            const g = Math.floor(Math.random() * 76) + 180;
+            const b = Math.floor(Math.random() * 76) + 180;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function createMessageBox() {
+            const bodyWidth = window.innerWidth;
+            const bodyHeight = window.innerHeight;
+            const boxWidth = 300;
+            const boxHeight = 80;
+
+            const marginPercent = 0.05;
+            const minX = Math.max(0, bodyWidth * marginPercent);
+            const maxX = Math.max(minX, bodyWidth - boxWidth - bodyWidth * marginPercent);
+            const minY = Math.max(0, bodyHeight * marginPercent);
+            const maxY = Math.max(minY, bodyHeight - boxHeight - bodyHeight * marginPercent);
+
+            const x = Math.floor(Math.random() * (maxX - minX) + minX);
+            const y = Math.floor(Math.random() * (maxY - minY) + minY);
+
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const color = randomColor();
+
+            const box = document.createElement('div');
+            box.className = 'message-box';
+            box.style.left = `${x}px`;
+            box.style.top = `${y}px`;
+            box.style.backgroundColor = color;
+            box.textContent = message;
+
+            document.body.appendChild(box);
+
+            box.addEventListener('click', () => {
+                box.style.opacity = '0';
+                box.style.transform = 'scale(0.9) translateY(10px)';
+                setTimeout(() => box.remove(), 400);
+            });
+        }
+
+        function startShowingBoxes() {
+            document.querySelector('.loading-tip').style.display = 'none';
+            let count = 0;
+            const interval = setInterval(() => {
+                createMessageBox();
+                count++;
+                if (count >= TOTAL_BOXES) clearInterval(interval);
+            }, CREATE_INTERVAL);
+        }
+
+        window.onload = () => {
+            setTimeout(startShowingBoxes, START_DELAY);
+        };
+    </script>
+</body>
+
+</html>
