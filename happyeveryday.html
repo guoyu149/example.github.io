@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱心消息盒（放大爱心框+4秒停留）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "楷体", KaiTi, serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 消息盒基础样式（放大爱心阶段尺寸） */
+        .message-box {
+            position: absolute;
+            /* 放大后的统一尺寸：80px宽 × 45px高（原60×35） */
+            width: 80px;
+            height: 45px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            /* 字体同步放大，保持视觉协调 */
+            padding: 0 6px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+            /* 强制文字不换行、溢出隐藏（保证尺寸统一） */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* 浮动动画 */
+            animation: float 12s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        /* 爱心阶段：继承放大后的基础尺寸 */
+        .message-box.heart-mode {
+            width: 80px;
+            height: 45px;
+            font-size: 12px;
+            padding: 0 6px;
+        }
+
+        /* 绽放后放大样式（保持原有放大尺寸） */
+        .message-box.bloom-mode {
+            width: 300px;
+            height: 80px;
+            font-size: 16px;
+            padding: 0 15px;
+        }
+
+        /* 浮动动画 */
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(1deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        /* 提示文本 */
+        .tip-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #666;
+            opacity: 0.8;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tip-text">爱心生成中... 💖</div>
+
+    <script>
+        // 暖心消息数组
+        const messages = [
+            "我想你了! ❤️",
+            "多喝水哦",
+            "保持微笑呀",
+            "每天都要元气满满呢",
+            "记得吃水果",
+            "保持好心情",
+            "好好爱自己",
+            "梦想成真",
+            "期待下一次见面",
+            "要相信自己",
+            "我好喜欢你呀! 💕",
+            "你超棒的",
+            "记得好好护肤",
+            "你笑起来真好看!",
+            "珍惜每一刻",
+            "今天有没有想我呀?",
+            "要注意身体，别太累了!",
+            "你的一切都让我心动!",
+            "遇见你是我最大的幸运!",
+            "我会一直陪在你身边的! 🌟",
+            "等张角角暴富养我",
+            "好好吃饭哦",
+            "和张角角一起旅游!",
+            "张角角万事顺意🌟",
+            "张角角平安喜乐，岁岁无忧🎈",
+            "张角角好好休息，别熬夜😴"
+        ];
+
+        // 核心配置（保持4秒停留）
+        const START_DELAY = 1000;        // 页面加载后启动延迟
+        const HEART_STAY_TIME = 4000;    // 爱心停留4秒
+        const CREATE_INTERVAL = 200;     // 生成爱心的间隔
+        const BLOOM_DURATION = 1000;     // 绽放动画时长
+        const AUTO_ADD_INTERVAL = 2000;  // 绽放后自动弹出新消息的间隔
+
+        // 生成随机亮色（RGB 180-255）
+        function randomColor() {
+            const r = Math.floor(Math.random() * 76) + 180;
+            const g = Math.floor(Math.random() * 76) + 180;
+            const b = Math.floor(Math.random() * 76) + 180;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // 生成爱心形状的坐标（适配放大后的消息盒）
+        function getHeartPoints(count) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            // 同步放大爱心缩放比例，适配80×45的消息盒
+            const scale = Math.min(window.innerWidth, window.innerHeight) * 0.025;
+            const points = [];
+
+            // 爱心参数方程
+            for (let i = 0; i < count; i++) {
+                const theta = (i / count) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(theta), 3);
+                const y = 13 * Math.cos(theta) - 5 * Math.cos(2 * theta) - 2 * Math.cos(3 * theta) - Math.cos(4 * theta);
+                // 微调偏移，适配放大后的盒子，保证爱心规整不重叠
+                points.push({
+                    x: centerX + x * scale + (Math.random() - 0.5) * 10,
+                    y: centerY - y * scale + (Math.random() - 0.5) * 10
+                });
+            }
+            return points;
+        }
+
+        // 创建消息盒（适配放大后的尺寸）
+        function createMessageBox(initX, initY, isNew = false) {
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const color = randomColor();
+
+            const box = document.createElement('div');
+            box.className = isNew ? 'message-box bloom-mode' : 'message-box heart-mode';
+
+            // 定位调整：适配放大后的消息盒，避免超出屏幕
+            const boxWidth = isNew ? 300 : 80;
+            const boxHeight = isNew ? 80 : 45;
+            const adjustX = initX + boxWidth > window.innerWidth ? window.innerWidth - boxWidth - 10 : initX;
+            const adjustY = initY + boxHeight > window.innerHeight ? window.innerHeight - boxHeight - 10 : initY;
+
+            box.style.left = `${adjustX}px`;
+            box.style.top = `${adjustY}px`;
+            box.style.backgroundColor = color;
+            box.textContent = message;
+
+            // 新增/绽放后：启动浮动
+            if (isNew) {
+                box.style.animationPlayState = 'running';
+            }
+
+            document.body.appendChild(box);
+
+            // 点击关闭
+            box.addEventListener('click', () => {
+                box.style.opacity = '0';
+                box.style.transform = 'scale(0.9)';
+                setTimeout(() => box.remove(), 400);
+            });
+
+            return box;
+        }
+
+        // 获取随机位置（用于绽放和新增消息）
+        function getRandomPos() {
+            const bodyWidth = window.innerWidth;
+            const bodyHeight = window.innerHeight;
+            return {
+                x: Math.random() * (bodyWidth - 140) + 70,
+                y: Math.random() * (bodyHeight - 90) + 45
+            };
+        }
+
+        // 绽放后自动持续弹出新消息
+        function autoAddNewMessages() {
+            setInterval(() => {
+                const pos = getRandomPos();
+                createMessageBox(pos.x, pos.y, true);
+            }, AUTO_ADD_INTERVAL);
+        }
+
+        // 主流程：生成放大爱心 → 4秒停留 → 绽放 → 持续弹出新消息
+        function startHeartAnimation() {
+            // 适当减少数量，适配放大后的盒子避免过度重叠
+            const totalBoxes = 120;
+            const heartPoints = getHeartPoints(totalBoxes);
+            const boxes = [];
+
+            // 1. 生成爱心（放大后的统一尺寸）
+            let count = 0;
+            const createInterval = setInterval(() => {
+                if (count >= totalBoxes) {
+                    clearInterval(createInterval);
+                    // 2. 爱心生成完成，显示提示并停留4秒
+                    document.querySelector('.tip-text').textContent = "爱心送给你~ 💕";
+                    setTimeout(() => {
+                        document.querySelector('.tip-text').style.display = 'none';
+                        // 3. 绽放：所有爱心消息盒统一放大+分散+启动浮动
+                        boxes.forEach(box => {
+                            const targetPos = getRandomPos();
+                            box.classList.remove('heart-mode');
+                            box.classList.add('bloom-mode');
+                            box.style.transition = `all ${BLOOM_DURATION}ms ease`;
+                            box.style.left = `${targetPos.x}px`;
+                            box.style.top = `${targetPos.y}px`;
+                            box.style.animationPlayState = 'running';
+                        });
+                        // 4. 启动自动持续弹出新消息
+                        autoAddNewMessages();
+                    }, HEART_STAY_TIME); // 4秒停留
+                    return;
+                }
+                const point = heartPoints[count];
+                boxes.push(createMessageBox(point.x, point.y));
+                count++;
+            }, CREATE_INTERVAL);
+        }
+
+        // 页面加载后启动
+        window.onload = () => {
+            setTimeout(startHeartAnimation, START_DELAY);
+        };
+    </script>
+</body>
+
+</html>
