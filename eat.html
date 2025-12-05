@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什么？</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft Yahei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .result-box {
+            height: 100px;
+            line-height: 100px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 24px;
+            color: #333;
+            background-color: #f8f9ff;
+            overflow: hidden;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            50% {
+                transform: translateX(5px);
+            }
+
+            75% {
+                transform: translateX(-5px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🍽️ 今天吃什么？</h1>
+        <p class="subtitle">选择困难症？交给运气来决定！</p>
+
+        <div class="result-box" id="resultBox">
+            点击按钮开始随机~
+        </div>
+
+        <button class="btn" id="randomBtn">随机选择</button>
+    </div>
+
+    <script>
+        // 美食列表（保留你提供的所有选项）
+        const foodItems = [
+            "隆江猪肘饭",
+            "正宗老成都果木烤鸭安德店",
+            "西门黄焖鸡米饭",
+            "佳香味烤肉饭",
+            "港记烧腊肉",
+            "周小面",
+            "嗷呜猪肘饭",
+            "炸鸡拌饭",
+            "酸萝卜.鸡杂",
+            "好味道盖饭炒饭",
+            "鸡公煲",
+            "土豆泥烤肉饭",
+            "大碗面",
+            "曾开心米线汤饭抄手",
+            "馄饨王",
+            "热辣滚烫面馆",
+            "面面俱到",
+            "广州云吞面",
+            "二哥包烧米线",
+            "唔里芝士瀑布火鸡面",
+            "米小仙米线",
+            "朱家小馆.羊杂面",
+            "手工水饺",
+            "绝味锡纸花甲米线",
+            "老重庆火锅麻辣烫",
+            "钟水饺",
+            "苏记冒菜",
+            "顺心柳州螺蛳粉+砂锅系列",
+            "李记面馆",
+            "川味餐厅",
+            "党三姐砂锅菜",
+            "炒饭大将",
+            "炒河粉",
+            "单锅小炒",
+            "螺霸天下柳州正宗螺蛳粉",
+            "下课恰饭档",
+            "百味鲜",
+            "口水鸡",
+            "大吉大利炸鸡汉堡",
+            "美式霸堡",
+            "Uncle Chicken韩式炸鸡",
+            "麦达克汉堡+炸鸡+盖饭",
+            "塔斯汀汉堡",
+            "宁瑶汉堡工厂",
+            "汉堡哥",
+            "001汉堡工厂",
+            "津巷炸鸡",
+            "0090汉堡工厂",
+            "判官汉堡",
+            "西施冒菜",
+            "魔力玛卡水晶冒菜",
+            "二哥包烧米线",
+            "三顾冒菜",
+            "蜀大仙冒菜",
+            "烤冷面",
+            "手抓饼",
+            "玛琪蛋糕",
+            "兵力王",
+            "瓦罐港式卤肉饭",
+            "鲜烧锑锅饭",
+            "上海馄饨",
+            "碗碗香特色干锅",
+            "王掌柜拌饭（花园餐厅）",
+            "精品套餐费（花园餐厅）",
+            "烧鹅饭（花园餐厅）",
+            "简阳羊肉汤",
+            "特色盖饭",
+            "黔溪牛羊肉米粉",
+            "好客家绵阳米粉",
+            "饼姐.摊煎饼",
+            "关东煮",
+            "库迪咖啡",
+            "沪上阿姨",
+            "幸运咖",
+            "沙县小吃",
+            "乐山翘脚牛肉",
+            "小二很忙自选快餐",
+            "周记霸王砂锅菜",
+            "盐帮菜",
+            "馋肉娃",
+            "绝味鸭脖",
+            "东北锅包肉",
+            "烤鸡腿",
+            "香辣锁骨",
+            "顺心小吃",
+            "奥尔良现烤",
+            "鲜肉馄饨",
+            "剁椒热卤肉拌饭",
+            "军屯锅盔",
+            "张亮麻辣烫",
+            "张亮麻辣拌",
+            "辣曹氏",
+            "阿香婆冒菜",
+            "曹氏鸭脖",
+            "卤味学姐冒菜.食欲茶香鸡",
+            "广福记干拌冒菜&新疆炒米粉",
+            "临榆炸鸡腿",
+            "白螺湾螺蛳粉",
+            "冯嬢炸串&蛊蛊面",
+            "小藿香牛肉拉面",
+            "宜宾燃面",
+            "兰州牛肉拉面",
+            "蒙自源",
+            "生椒牛肉面",
+            "螺大侠螺狮粉",
+            "勾魂面",
+            "重庆小面",
+            "五谷鱼粉",
+            "鱼香肉丝",
+
+
+        ];
+
+        // DOM元素
+        const resultBox = document.getElementById('resultBox');
+        const randomBtn = document.getElementById('randomBtn');
+
+        // 随机选择食物
+        function randomSelect() {
+            // 添加动画效果
+            resultBox.classList.add('shake');
+            setTimeout(() => resultBox.classList.remove('shake'), 500);
+
+            // 快速切换展示不同食物，模拟随机过程
+            let count = 0;
+            const maxCount = 20;
+            const interval = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * foodItems.length);
+                resultBox.textContent = foodItems[randomIndex];
+                count++;
+
+                if (count >= maxCount) {
+                    clearInterval(interval);
+                    // 最终结果
+                    const finalIndex = Math.floor(Math.random() * foodItems.length);
+                    resultBox.textContent = `🎉 就吃：${foodItems[finalIndex]}！`;
+                }
+            }, 50);
+        }
+
+        // 绑定事件
+        randomBtn.addEventListener('click', randomSelect);
+    </script>
+</body>
+
+</html>
